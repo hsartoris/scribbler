@@ -527,7 +527,6 @@ class Box(Behavior):
 				a = getObstacle()
 			if(np.count_nonzero(variance(self, takePicture())) > 3):#there is abox in front of us
 				print("there is a box")
-
 				return
 			elif(sum(a)/3 < 300): #the neither box nor wall is in front
 				while(sum(getObstacle())/3 < 300 and timeRemaining(3)): motors(.5, .5)
