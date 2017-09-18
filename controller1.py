@@ -3,13 +3,20 @@
 # Behaviors are implemented as objects.
 # Author:  Bobby Mills
 
+from colorsys import rgb_to_hls as hls
 from myro import *
 from random import random
 from math import *
 import numpy as np
+import time
 #init("/dev/rfcomm0")
 ###############################################################################
 lastTurn = 1 # 1:right; 2:left; 0:center
+
+def map(x, min, range):
+	return (x - min)/range
+
+
 
 def variance(self, pic, counterThresh=0, satThresh=0):
 	lThresh = .125
@@ -17,7 +24,7 @@ def variance(self, pic, counterThresh=0, satThresh=0):
 	yCount = 10
 	xOff = 420 / xCount
 	yOff = 266 / yCount
-	lt = .05
+	lt = .25
 	if counterThresh == 0:
 		counterThresh = (yCount/2) + 1
 	else:
@@ -25,29 +32,54 @@ def variance(self, pic, counterThresh=0, satThresh=0):
 	check = [0 for x in range(xCount)]
 
 	#satThresh = .35
-	matrix = np.zeros(shape = (yCount, xCount), dtype=(float, 2))
+	matrix = np.zeros(shape = (yCount, xCount, 3), dtype=float)
 	for x in range(0, xCount):
-		lSum = 0
 		for y in range(0, yCount):
+			#col = getRGB(getPixel(pic, x * xOff, y * yOff))
+			#matrix[y][x] = hls(col[0], col[1], col[2])
+			#matrix[y][x] /= 255.0
 			rgb = np.array([getRGB(getPixel(pic, x * xOff, y * yOff))]) / 255.0
 			matrix[y][x][0] = (np.amin(rgb) + np.amax(rgb))/2
-			lSum += matrix[y][x][0]
 			delta = np.amax(rgb) - np.amin(rgb)
 			if delta == 0:
 				matrix[y][x][1] = 0
 			else:
 				matrix[y][x][1] = delta/(1-abs((2*matrix[y][x][0])-1))
-				if matrix[y][x][1] == 1.0:
-					matrix[y][x][1] = 0
-		lSum /= float(yCount)
+				#if matrix[y][x][1] == 1.0:
+					#matrix[y][x][1] = 0 # hacky
+	#normalize
+	lMin = np.amin(matrix[:, :, 0])
+	lRange = np.amax(matrix[:, :, 0]) - lMin
+	sMin = np.amin(matrix[:, :, 1])
+	sRange = np.amax(matrix[:, :, 1]) - sMin
+	#print("Minimum lightness: " + str(lMin))
+	#print("Lightness range: " + str(lRange))
+	#print("Minimum saturation: " + str(sMin))
+	#print("Saturation range: " + str(sRange))
+	m = np.vectorize(map)
+	#matrix[:, :, 1] = m(matrix[:, :, 1], sMin, sRange)
+	#matrix[:, :, 0] = m(matrix[:, :, 0], lMin, lRange)
+	#matrix = (matrix - np.mean(matrix, axis=-1)) / np.std(matrix, axis=-1)
+	#print(matrix[:, :, 0])
+	for x in range(0, xCount):
 		counter = 0
+		lAvg = np.average(matrix[:, :, 0])
+		#print("Column " + str(x))
 		for y in range(0, yCount):
-			if (abs(lSum - matrix[y][x][0]) < lt) and matrix[y][x][1] > satThresh:
+			setRGB(getPixel(pic, x * xOff, y * yOff), (255, 0, 0))
+			#print(matrix[y][x][1])
+			if (abs(lAvg - matrix[y][x][0]) < lt) and matrix[y][x][1] > satThresh:
+				#print("within limits")
 				counter += 1
 			if matrix[y][x][0] < lThresh or matrix[y][x][0] > 1 - lThresh:
+				#print("thresholded")
 				counter -= 1
 
-		if counter >= counterThresh:
+		#print(np.std(matrix[:, x, 0]))
+		#print(np.average(matrix[:, x, 1]))
+		#if np.std(matrix[:, x, 1]) < lt and np.std(matrix[:, x, 2]) < .0002:
+		#	check[x] = 1
+		if counter >= counterThresh or check[x] == 1:
 			#check[x] = counter
 			check[x] = 1
 			for i in range(266):
@@ -560,7 +592,7 @@ class Controller(object):
 		self.boxBehavior = Box()
 
 		self.behaviors = [self.boxBehavior, self.coneBehavior, self.searchBehavior, self.avoidBehavior, self.wanderBehavior]
-
+		#self.behaviors = [self.coneBehavior, self.searchBehavior, self.avoidBehavior, self.wanderBehavior]
 		self.moreBehaviors = [self.coneBehavior, self.foundBehavior, self.scanBehavior]
 
         # Order implements priority arbitration.
@@ -595,9 +627,18 @@ class Controller(object):
 		stop()
 
 
+class Test():
+	def __init__(self):
+		setPicSize('small')
+		p = takePicture()
+		start = time.time()
+		print(variance(self, p, satThresh=.35))
+		print(start - time.time())
+		savePicture(p, "pic.png")
 
 
 if __name__ == "__main__":
-    init('/dev/rfcomm0')
-    ctl = Controller()
-    ctl.run()
+	init('/dev/rfcomm0')
+	#t = Test()
+	ctl = Controller()
+	ctl.run()
