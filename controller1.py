@@ -21,9 +21,10 @@ def map(x, min, range):
 def variance(self, pic, counterThresh=0, satThresh=0):
 	lThresh = .125
 	xCount = 60
-	yCount = 10
+	yCount = 5
+	yPad = 133
 	xOff = 420 / xCount
-	yOff = 266 / yCount
+	yOff = 65 / yCount
 	lt = .25
 	if counterThresh == 0:
 		counterThresh = (yCount/2) + 1
@@ -38,7 +39,7 @@ def variance(self, pic, counterThresh=0, satThresh=0):
 			#col = getRGB(getPixel(pic, x * xOff, y * yOff))
 			#matrix[y][x] = hls(col[0], col[1], col[2])
 			#matrix[y][x] /= 255.0
-			rgb = np.array([getRGB(getPixel(pic, x * xOff, y * yOff))]) / 255.0
+			rgb = np.array([getRGB(getPixel(pic, x * xOff, y * yOff + yPad))]) / 255.0
 			matrix[y][x][0] = (np.amin(rgb) + np.amax(rgb))/2
 			delta = np.amax(rgb) - np.amin(rgb)
 			if delta == 0:
@@ -66,7 +67,7 @@ def variance(self, pic, counterThresh=0, satThresh=0):
 		lAvg = np.average(matrix[:, :, 0])
 		#print("Column " + str(x))
 		for y in range(0, yCount):
-			setRGB(getPixel(pic, x * xOff, y * yOff), (255, 0, 0))
+			setRGB(getPixel(pic, x * xOff, y * yOff + yPad), (255, 0, 0))
 			#print(matrix[y][x][1])
 			if (abs(lAvg - matrix[y][x][0]) < lt) and matrix[y][x][1] > satThresh:
 				#print("within limits")
@@ -638,6 +639,6 @@ class Test():
 
 if __name__ == "__main__":
 	init('/dev/rfcomm0')
-	#t = Test()
-	ctl = Controller()
-	ctl.run()
+	t = Test()
+	#ctl = Controller()
+	#ctl.run()
