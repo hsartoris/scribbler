@@ -1,6 +1,8 @@
 from myro import *
 import numpy as np
 
+
+
 init('/dev/rfcomm0')
 setPicSize('small')
 
@@ -70,7 +72,7 @@ def variance(pic, counterThresh=0, satThresh=0):
 
 		if counter >= counterThresh:
 			#check[x] = counter
-			print("diff: " + str(maxL - minL))
+			#print("diff: " + str(maxL - minL))
 			check[x] = 1
 			for i in range(266):
 				setRGB(getPixel(pic, x * xOff, i), (255, 0, 0))
@@ -80,8 +82,7 @@ def variance(pic, counterThresh=0, satThresh=0):
 variance(p)
 
 #configureBlob(0,254, 120,130, 125, 135)
-
-
+show(p)
 savePicture(p, "pic.png")
 
 #turnRight(90/90.0,4)
